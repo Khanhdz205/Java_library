@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .navbar-brand { font-weight: bold; }
+        .nav-item.dropdown:hover .dropdown-menu { display: block; }
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: translate(25%, -25%);
+            font-size: 0.7rem;
+        }
+        .dropdown-menu {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+<!-- Fragment header -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary" th:fragment="header">
+    <div class="container">
+        <a class="navbar-brand" th:href="@{/}" data-i18n="nav.brand">
+            <i class="fas fa-book-open me-2"></i><span data-i18n="nav.brand.text">Thư viện Tài liệu</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/}">
+                        <i class="fas fa-home me-1"></i><span data-i18n="nav.home">Trang chủ</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/documents}">
+                        <i class="fas fa-file-alt me-1"></i><span data-i18n="nav.documents">Tài liệu</span>
+                    </a>
+                </li>
+
+                <!-- Dropdown Học tập cá nhân -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="learningDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-graduate me-1"></i><span data-i18n="nav.learning">Học tập</span>
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="learningDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/schedule}">
+                                <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                <span data-i18n="nav.learning.schedule">Lịch học cá nhân</span>
+                                <span th:if="${currentUserScheduleCount > 0}"
+                                      class="badge bg-primary notification-badge"
+                                      th:text="${currentUserScheduleCount}">
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/recommendations}">
+                                <i class="fas fa-lightbulb me-2 text-warning"></i>
+                                <span data-i18n="nav.learning.recommendations">Đề xuất thông minh</span>
+                                <span th:if="${newRecommendations > 0}"
+                                      class="badge bg-warning notification-badge"
+                                      th:text="${newRecommendations}">
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/preferences}">
+                                <i class="fas fa-user-cog me-2 text-success"></i>
+                                <span data-i18n="nav.learning.preferences">Sở thích học tập</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/documents/recent}">
+                                <i class="fas fa-clock me-2 text-info"></i>
+                                <span data-i18n="nav.learning.recent">Tài liệu mới nhất</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/documents/search/advanced}">
+                                <i class="fas fa-search me-2 text-secondary"></i>
+                                <span data-i18n="nav.learning.advanced_search">Tìm kiếm nâng cao</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/subjects}">
+                        <i class="fas fa-graduation-cap me-1"></i><span data-i18n="nav.subjects">Môn học</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/categories}">
+                        <i class="fas fa-tags me-1"></i><span data-i18n="nav.categories">Danh mục</span>
+                    </a>
+                </li>
+
+                <!-- Dropdown Quản lý -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="managementDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cogs me-1"></i><span data-i18n="nav.management">Quản lý</span>
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="managementDropdown">
+                        <li>
+                            <a class="dropdown-item" th:href="@{/users}">
+                                <i class="fas fa-users me-2"></i>
+                                <span data-i18n="nav.management.users">Người dùng</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" th:href="@{/comments}">
+                                <i class="fas fa-comments me-2"></i>
+                                <span data-i18n="nav.management.comments">Bình luận</span>
+                                <span th:if="${unreadComments > 0}"
+                                      class="badge bg-danger notification-badge"
+                                      th:text="${unreadComments}">
+                                </span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                <span data-i18n="nav.management.statistics">Thống kê</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-file-alt me-2"></i>
+                                <span data-i18n="nav.management.reports">Báo cáo</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- Thanh tìm kiếm -->
+            <form class="d-flex me-3" th:action="@{/documents/search/keyword}" method="get">
+                <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" data-i18n="nav.search.placeholder"
+                           placeholder="Tìm tài liệu..." name="keyword" aria-label="Tìm kiếm" style="width: 200px;">
+                    <button class="btn btn-outline-light" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Nút chuyển ngôn ngữ -->
+            <ul class="navbar-nav me-2">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-language me-1"></i>🌐
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item language-btn" href="#" data-lang="vi">🇻🇳 Tiếng Việt</a></li>
+                        <li><a class="dropdown-item language-btn" href="#" data-lang="en">🇺🇸 English</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- Thông tin người dùng -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                       data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user me-1"></i>
+                        <span th:if="${currentUser != null}" th:text="${currentUser.fullName} ?: 'Người dùng'">Người dùng</span>
+                        <span th:unless="${currentUser != null}" data-i18n="nav.user.account">Tài khoản</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-id-card me-2"></i>
+                                <span data-i18n="nav.user.profile">Hồ sơ cá nhân</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-file-upload me-2"></i>
+                                <span data-i18n="nav.user.my_documents">Tài liệu của tôi</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-comment me-2"></i>
+                                <span data-i18n="nav.user.my_comments">Bình luận của tôi</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-bell me-2"></i>
+                                <span data-i18n="nav.user.notifications">Thông báo</span>
+                                <span th:if="${notificationCount > 0}"
+                                      class="badge bg-danger notification-badge"
+                                      th:text="${notificationCount}">
+                                </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-cog me-2"></i>
+                                <span data-i18n="nav.user.settings">Cài đặt</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li th:if="${currentUser != null}">
+                            <a class="dropdown-item text-danger" href="#">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                <span data-i18n="nav.user.logout">Đăng xuất</span>
+                            </a>
+                        </li>
+                        <li th:unless="${currentUser != null}">
+                            <a class="dropdown-item text-success" href="#">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                <span data-i18n="nav.user.login">Đăng nhập</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- JavaScript để xử lý dropdown hover -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kích hoạt dropdown trên hover
+        const dropdownElements = document.querySelectorAll('.nav-item.dropdown');
+        dropdownElements.forEach(function(dropdown) {
+            dropdown.addEventListener('mouseenter', function() {
+                const dropdownMenu = this.querySelector('.dropdown-menu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.add('show');
+                }
+            });
+            dropdown.addEventListener('mouseleave', function() {
+                const dropdownMenu = this.querySelector('.dropdown-menu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.remove('show');
+                }
+            });
+        });
+
+        // Ẩn dropdown khi click outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.matches('.dropdown-toggle')) {
+                const dropdowns = document.querySelectorAll('.dropdown-menu');
+                dropdowns.forEach(function(dropdown) {
+                    dropdown.classList.remove('show');
+                });
+            }
+        });
+    });
+</script>
+</body>
+</html>

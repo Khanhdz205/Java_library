@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="details.page.title">Chi tiết tài liệu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .loading-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .related-doc-card {
+            transition: transform 0.2s ease-in-out;
+            border: 1px solid #e9ecef;
+        }
+        .related-doc-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .rating-stars {
+            color: #ffc107;
+        }
+        .document-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        [data-i18n]:not([data-i18n-init]) {
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-container">
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2" data-i18n="common.loading">Đang tải...</p>
+    </div>
+</div>
+
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container mt-4">
+    <!-- Flash Messages -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Thông tin tài liệu -->
+    <div class="card mb-4">
+        <div class="card-header document-header text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-file-alt me-2"></i><span data-i18n="details.document_info">Thông tin chi tiết tài liệu</span></h4>
+                <div class="rating-stars">
+                    <i class="fas fa-star"></i>
+                    <span th:text="${averageRating ?: '0'} + '/5'"></span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <h3 class="text-primary" th:text="${document?.title}"></h3>
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-user me-1"></i><strong data-i18n="details.author">Tác giả:</strong>
+                        <span th:text="${document?.author ?: 'N/A'}"></span>
+                    </p>
+
+                    <div class="mb-3">
+                        <strong><i class="fas fa-align-left me-1"></i><span data-i18n="details.description">Mô tả:</span></strong>
+                        <p class="mt-1" th:text="${document?.description ?: 'Không có mô tả'}"></p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong><i class="fas fa-book me-1"></i><span data-i18n="details.subject">Môn học:</span></strong>
+                                <span class="badge bg-info ms-2" th:text="${document?.subject?.name ?: 'N/A'}"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <strong><i class="fas fa-user-upload me-1"></i><span data-i18n="details.uploader">Người upload:</span></strong>
+                                <span th:if="${document?.uploadedBy}"
+                                      th:text="${document.uploadedBy.fullName}"
+                                      class="text-muted"></span>
+                                <span th:unless="${document?.uploadedBy}" class="text-muted" data-i18n="details.unknown">Không xác định</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <strong><i class="fas fa-tags me-1"></i><span data-i18n="details.categories">Danh mục:</span></strong>
+                        <div th:if="${document?.categories && !document.categories.empty}" class="mt-1">
+                            <span th:each="category : ${document.categories}"
+                                  class="badge bg-secondary me-1"
+                                  th:text="${category.name}"></span>
+                        </div>
+                        <span th:unless="${document?.categories && !document.categories.empty}"
+                              class="text-muted"
+                              data-i18n="details.no_categories">Không có danh mục</span>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-download me-1"></i><span data-i18n="details.download">Tải xuống</span></h6>
+                        </div>
+                        <div class="card-body text-center">
+                            <div th:if="${document?.filePath}" class="mb-3">
+                                <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
+                                <p class="mb-1" th:text="${document.filePath}"></p>
+                                <small class="text-muted" th:text="${document.fileSize ? (#numbers.formatDecimal(document.fileSize / 1048576, 1, 2) + ' MB') : 'N/A'}"></small>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <a th:href="@{'/download/' + ${document.filePath}}"
+                                   class="btn btn-success"
+                                   th:if="${document?.filePath}"
+                                   data-i18n="details.download_button">
+                                    <i class="fas fa-download me-1"></i>Tải xuống
+                                </a>
+                                <a th:href="@{/documents/edit/{id}(id=${document.id})}"
+                                   class="btn btn-warning"
+                                   data-i18n="details.edit_button">
+                                    <i class="fas fa-edit me-1"></i>Sửa thông tin
+                                </a>
+                                <a th:href="@{/documents}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i><span data-i18n="common.back_list">Quay lại danh sách</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form thêm bình luận -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-comment me-2"></i><span data-i18n="details.add_comment">Thêm bình luận và đánh giá</span></h5>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/comments/create}" method="post">
+                <input type="hidden" name="documentId" th:value="${document?.id}">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="userId" class="form-label" data-i18n="details.commenter_label">Người bình luận</label> <span class="text-danger">*</span>
+                            <select class="form-select" id="userId" name="userId" required>
+                                <option value="" data-i18n="details.commenter_placeholder">Chọn người dùng...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="rating" class="form-label" data-i18n="details.rating_label">Đánh giá (từ 1-5 sao)</label>
+                            <select class="form-select" id="rating" name="rating">
+                                <option value="" data-i18n="details.no_rating">Không đánh giá</option>
+                                <option value="1" data-i18n="details.rating_1">1 Sao - Rất tệ</option>
+                                <option value="2" data-i18n="details.rating_2">2 Sao - Tệ</option>
+                                <option value="3" data-i18n="details.rating_3">3 Sao - Bình thường</option>
+                                <option value="4" data-i18n="details.rating_4">4 Sao - Tốt</option>
+                                <option value="5" data-i18n="details.rating_5">5 Sao - Rất tốt</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="content" class="form-label" data-i18n="details.content_label">Nội dung bình luận</label> <span class="text-danger">*</span>
+                    <textarea class="form-control" id="content" name="content" rows="3"
+                              data-i18n="details.content_placeholder"
+                              placeholder="Nhập nội dung bình luận của bạn..."
+                              required></textarea>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <span data-i18n="details.comment_notice">Bình luận của bạn sẽ được hiển thị công khai</span>
+                    </small>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-paper-plane me-1"></i><span data-i18n="details.submit_comment">Gửi bình luận</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danh sách bình luận -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-comments me-2"></i><span data-i18n="details.comments">Bình luận</span>
+                <span class="badge bg-light text-dark" th:text="${document?.comments ? #lists.size(document.comments) : 0}"></span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div th:if="${!document?.comments || document.comments.empty}">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-comments fa-3x mb-3"></i>
+                    <p data-i18n="details.no_comments">Chưa có bình luận nào.</p>
+                    <p class="small" data-i18n="details.first_comment">Hãy là người đầu tiên bình luận về tài liệu này!</p>
+                </div>
+            </div>
+
+            <div th:if="${document?.comments && !document.comments.empty}"
+                 th:each="comment : ${document.comments}"
+                 class="border-bottom pb-3 mb-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <strong th:text="${comment.user?.fullName ?: 'Unknown'}"></strong>
+                        <small class="text-muted ms-2" th:text="${comment.user?.role ?: 'N/A'}"></small>
+                    </div>
+                    <small class="text-muted" th:text="${#temporals.format(comment.createdDate, 'dd/MM/yyyy HH:mm')}"></small>
+                </div>
+
+                <div class="mb-2" th:text="${comment.content}"></div>
+
+                <div th:if="${comment.rating}" class="d-flex align-items-center">
+                    <div class="rating-stars me-2">
+                        <span th:each="i : ${#numbers.sequence(1, 5)}">
+                            <i th:class="${i <= comment.rating} ? 'fas fa-star' : 'far fa-star'"></i>
+                        </span>
+                    </div>
+                    <small class="text-muted" th:text="'(' + ${comment.rating} + '/5)'"></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tài liệu liên quan -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-bookmark me-2"></i><span data-i18n="details.related_docs">Tài liệu liên quan</span>
+                <span class="badge bg-light text-dark" th:text="${relatedDocuments ? #lists.size(relatedDocuments) : 0}"></span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div th:if="${!relatedDocuments || relatedDocuments.empty}">
+                <p class="text-muted text-center" data-i18n="details.no_related_docs">Không có tài liệu liên quan.</p>
+            </div>
+
+            <div class="row" th:if="${relatedDocuments && !relatedDocuments.empty}">
+                <div th:each="relatedDoc : ${relatedDocuments}" class="col-md-6 col-lg-3 mb-3">
+                    <div class="card h-100 related-doc-card">
+                        <div class="card-body">
+                            <h6 class="card-title" style="font-size: 0.9rem; min-height: 40px;"
+                                th:text="${relatedDoc.title}"></h6>
+                            <p class="card-text mb-2">
+                                <small class="text-muted" th:text="${relatedDoc.author}"></small>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-info"
+                                      th:text="${relatedDoc.subject?.name}"></span>
+                                <a th:href="@{/documents/{id}(id=${relatedDoc.id})}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Translation Script -->
+<script>
+    if (typeof window.translationInitialized === 'undefined') {
+        window.translationInitialized = true;
+
+        const translations = {
+            vi: {
+                'details.page.title': 'Chi tiết tài liệu',
+                'common.loading': 'Đang tải...',
+                'common.back_list': 'Quay lại danh sách',
+
+                'details.document_info': 'Thông tin chi tiết tài liệu',
+                'details.author': 'Tác giả:',
+                'details.description': 'Mô tả:',
+                'details.no_description': 'Không có mô tả',
+                'details.subject': 'Môn học:',
+                'details.uploader': 'Người upload:',
+                'details.unknown': 'Không xác định',
+                'details.categories': 'Danh mục:',
+                'details.no_categories': 'Không có danh mục',
+                'details.download': 'Tải xuống',
+                'details.download_button': 'Tải xuống',
+                'details.edit_button': 'Sửa thông tin',
+
+                'details.add_comment': 'Thêm bình luận và đánh giá',
+                'details.commenter_label': 'Người bình luận',
+                'details.commenter_placeholder': 'Chọn người dùng...',
+                'details.rating_label': 'Đánh giá (từ 1-5 sao)',
+                'details.no_rating': 'Không đánh giá',
+                'details.rating_1': '1 Sao - Rất tệ',
+                'details.rating_2': '2 Sao - Tệ',
+                'details.rating_3': '3 Sao - Bình thường',
+                'details.rating_4': '4 Sao - Tốt',
+                'details.rating_5': '5 Sao - Rất tốt',
+                'details.content_label': 'Nội dung bình luận',
+                'details.content_placeholder': 'Nhập nội dung bình luận của bạn...',
+                'details.comment_notice': 'Bình luận của bạn sẽ được hiển thị công khai',
+                'details.submit_comment': 'Gửi bình luận',
+
+                'details.comments': 'Bình luận',
+                'details.no_comments': 'Chưa có bình luận nào.',
+                'details.first_comment': 'Hãy là người đầu tiên bình luận về tài liệu này!',
+
+                'details.related_docs': 'Tài liệu liên quan',
+                'details.no_related_docs': 'Không có tài liệu liên quan.'
+            },
+            en: {
+                'details.page.title': 'Document Details',
+                'common.loading': 'Loading...',
+                'common.back_list': 'Back to List',
+
+                'details.document_info': 'Document Details',
+                'details.author': 'Author:',
+                'details.description': 'Description:',
+                'details.no_description': 'No description',
+                'details.subject': 'Subject:',
+                'details.uploader': 'Uploader:',
+                'details.unknown': 'Unknown',
+                'details.categories': 'Categories:',
+                'details.no_categories': 'No categories',
+                'details.download': 'Download',
+                'details.download_button': 'Download',
+                'details.edit_button': 'Edit Information',
+
+                'details.add_comment': 'Add Comment and Rating',
+                'details.commenter_label': 'Commenter',
+                'details.commenter_placeholder': 'Choose user...',
+                'details.rating_label': 'Rating (1-5 stars)',
+                'details.no_rating': 'No rating',
+                'details.rating_1': '1 Star - Very Bad',
+                'details.rating_2': '2 Stars - Bad',
+                'details.rating_3': '3 Stars - Average',
+                'details.rating_4': '4 Stars - Good',
+                'details.rating_5': '5 Stars - Excellent',
+                'details.content_label': 'Comment Content',
+                'details.content_placeholder': 'Enter your comment content...',
+                'details.comment_notice': 'Your comment will be displayed publicly',
+                'details.submit_comment': 'Submit Comment',
+
+                'details.comments': 'Comments',
+                'details.no_comments': 'No comments yet.',
+                'details.first_comment': 'Be the first to comment on this document!',
+
+                'details.related_docs': 'Related Documents',
+                'details.no_related_docs': 'No related documents.'
+            }
+        };
+
+        function getTranslation(key) {
+            try {
+                const savedLang = localStorage.getItem('preferredLanguage') || 'vi';
+                return translations[savedLang]?.[key] || translations.vi[key] || key;
+            } catch (error) {
+                console.warn('Translation error:', error);
+                return key;
+            }
+        }
+
+        function changeLanguage(lang) {
+            try {
+                if (!translations[lang]) lang = 'vi';
+
+                localStorage.setItem('preferredLanguage', lang);
+                document.documentElement.lang = lang;
+
+                const dict = translations[lang];
+                document.querySelectorAll('[data-i18n]').forEach(element => {
+                    try {
+                        const key = element.getAttribute('data-i18n');
+                        if (dict && dict[key]) {
+                            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
+                                element.placeholder = dict[key];
+                            } else if (element.tagName === 'TITLE') {
+                                document.title = dict[key];
+                            } else {
+                                element.textContent = dict[key];
+                            }
+                            element.setAttribute('data-i18n-init', 'true');
+                        }
+                    } catch (e) {
+                        console.warn('Error updating element:', e);
+                    }
+                });
+
+                // Update select options
+                document.querySelectorAll('option[data-i18n]').forEach(option => {
+                    try {
+                        const key = option.getAttribute('data-i18n');
+                        if (dict && dict[key]) {
+                            option.textContent = dict[key];
+                        }
+                    } catch (e) {
+                        console.warn('Error updating option:', e);
+                    }
+                });
+            } catch (error) {
+                console.error('Language change error:', error);
+            }
+        }
+
+        function initLanguage() {
+            try {
+                const loadingEl = document.getElementById('loadingOverlay');
+                if (loadingEl) loadingEl.style.display = 'flex';
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', applyLanguage);
+                } else {
+                    applyLanguage();
+                }
+
+                function applyLanguage() {
+                    try {
+                        const savedLang = localStorage.getItem('preferredLanguage') || 'vi';
+                        changeLanguage(savedLang);
+
+                        setTimeout(() => {
+                            if (loadingEl) loadingEl.style.display = 'none';
+                            document.querySelectorAll('[data-i18n]').forEach(el => {
+                                el.style.visibility = 'visible';
+                            });
+                        }, 100);
+
+                    } catch (error) {
+                        console.error('Apply language error:', error);
+                        if (loadingEl) loadingEl.style.display = 'none';
+                    }
+                }
+
+            } catch (error) {
+                console.error('Init language error:', error);
+            }
+        }
+
+        try {
+            initLanguage();
+
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.language-btn')) {
+                    e.preventDefault();
+                    const btn = e.target.closest('.language-btn');
+                    const lang = btn.getAttribute('data-lang');
+                    if (lang) changeLanguage(lang);
+                }
+            });
+
+            setTimeout(() => {
+                const loadingEl = document.getElementById('loadingOverlay');
+                if (loadingEl && loadingEl.style.display !== 'none') {
+                    loadingEl.style.display = 'none';
+                    document.querySelectorAll('[data-i18n]').forEach(el => {
+                        el.style.visibility = 'visible';
+                    });
+                }
+            }, 3000);
+
+        } catch (error) {
+            console.error('Initialization error:', error);
+            const loadingEl = document.getElementById('loadingOverlay');
+            if (loadingEl) loadingEl.style.display = 'none';
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                el.style.visibility = 'visible';
+            });
+        }
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch học cá nhân</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .schedule-card {
+            transition: transform 0.2s;
+            border-left: 4px solid #007bff;
+        }
+        .schedule-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .inactive-schedule {
+            opacity: 0.6;
+            background-color: #f8f9fa;
+        }
+        .day-column {
+            min-height: 400px;
+        }
+        .current-day {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-calendar-alt me-2"></i>Lịch học cá nhân</h2>
+        <div>
+            <a th:href="@{/recommendations}" class="btn btn-info me-2">
+                <i class="fas fa-lightbulb me-1"></i>Đề xuất tài liệu
+            </a>
+            <a th:href="@{/schedule/create}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Thêm lịch học
+            </a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        <span th:text="${success}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        <span th:text="${error}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Thống kê nhanh -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 th:text="${#lists.size(schedules)}">0</h4>
+                            <p class="mb-0">Tổng môn học</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-book fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 th:text="${#lists.size(schedules.?[active])}">0</h4>
+                            <p class="mb-0">Đang học</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-play-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 th:text="${#lists.size(schedules.?[!active])}">0</h4>
+                            <p class="mb-0">Tạm dừng</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-pause-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 th:text="${#lists.size(subjects)}">0</h4>
+                            <p class="mb-0">Môn học có sẵn</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-graduation-cap fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lịch học theo ngày -->
+    <div class="row">
+        <div th:each="day : ${T(java.time.DayOfWeek).values()}" class="col-md-4 mb-4">
+            <div class="card day-column">
+                <div class="card-header" th:classappend="${day == T(java.time.DayOfWeek).from(java.time.LocalDate.now())} ? 'current-day' : 'bg-light'">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar-day me-2"></i>
+                        <span th:text="${#temporals.format(java.time.LocalDate.now().with(${day}), 'EEEE')}"></span>
+                        <span th:if="${day == T(java.time.DayOfWeek).from(java.time.LocalDate.now())}"
+                              class="badge bg-warning ms-2">Hôm nay</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div th:each="schedule : ${schedules}" th:if="${schedule.dayOfWeek == day}">
+                        <div class="card mb-3 schedule-card" th:classappend="${!schedule.active} ? 'inactive-schedule' : ''">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="card-title mb-1 text-primary" th:text="${schedule.subject.name}"></h6>
+                                        <p class="card-text mb-1">
+                                            <i class="fas fa-clock me-1 text-muted"></i>
+                                            <span th:text="${#temporals.format(schedule.startTime, 'HH:mm') + ' - ' + #temporals.format(schedule.endTime, 'HH:mm')}"></span>
+                                        </p>
+                                    </div>
+                                    <div class="btn-group btn-group-sm">
+                                        <a th:href="@{/schedule/toggle/{id}(id=${schedule.id})}"
+                                           class="btn btn-outline-secondary"
+                                           th:title="${schedule.active} ? 'Tạm ẩn' : 'Kích hoạt'">
+                                            <i th:class="${schedule.active} ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                                        </a>
+                                        <a th:href="@{/schedule/edit/{id}(id=${schedule.id})}"
+                                           class="btn btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a th:href="@{/schedule/delete/{id}(id=${schedule.id})}"
+                                           class="btn btn-outline-danger"
+                                           onclick="return confirm('Bạn có chắc chắn muốn xóa lịch học này?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div th:if="${schedule.classroom || schedule.instructor}" class="mb-2">
+                                    <p class="card-text mb-1" th:if="${schedule.classroom}">
+                                        <i class="fas fa-door-open me-1 text-muted"></i>
+                                        <small class="text-muted">Phòng: </small>
+                                        <strong th:text="${schedule.classroom}"></strong>
+                                    </p>
+                                    <p class="card-text" th:if="${schedule.instructor}">
+                                        <i class="fas fa-chalkboard-teacher me-1 text-muted"></i>
+                                        <small class="text-muted">GV: </small>
+                                        <strong th:text="${schedule.instructor}"></strong>
+                                    </p>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span th:if="${schedule.priority}" class="badge"
+                                              th:classappend="${schedule.priority == 1} ? 'bg-secondary' :
+                                                             ${schedule.priority == 2} ? 'bg-info' :
+                                                             ${schedule.priority == 3} ? 'bg-primary' :
+                                                             ${schedule.priority == 4} ? 'bg-warning' : 'bg-danger'}">
+                                            Ưu tiên: <span th:text="${schedule.priority}"></span>
+                                        </span>
+                                        <span th:if="${!schedule.active}" class="badge bg-secondary ms-1">Tạm dừng</span>
+                                    </div>
+                                    <a th:href="@{/documents/subject/{id}(id=${schedule.subject.id})}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-book me-1"></i>Tài liệu
+                                    </a>
+                                </div>
+
+                                <div th:if="${schedule.notes}" class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-sticky-note me-1"></i>
+                                        <span th:text="${schedule.notes}"></span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${#lists.isEmpty(schedules.?[dayOfWeek == day])}">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-calendar-times fa-2x mb-3"></i>
+                            <p>Không có lịch học</p>
+                            <a th:href="@{/schedule/create}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-plus me-1"></i>Thêm lịch học
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tự động ẩn alert sau 5 giây
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        });
+
+        // Highlight lịch học hiện tại dựa trên thời gian
+        const now = new Date();
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+
+        document.querySelectorAll('.schedule-card').forEach(card => {
+            const timeText = card.querySelector('.card-text .fa-clock').parentNode.textContent.trim();
+            const [start, end] = timeText.split(' - ');
+            const [startHours, startMinutes] = start.split(':').map(Number);
+            const [endHours, endMinutes] = end.split(':').map(Number);
+
+            const startTotal = startHours * 60 + startMinutes;
+            const endTotal = endHours * 60 + endMinutes;
+
+            if (currentTime >= startTotal && currentTime <= endTotal) {
+                card.style.borderLeft = '4px solid #28a745';
+                card.classList.add('border-success');
+            }
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Sở thích học tập</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .preference-section {
+            border-left: 4px solid #28a745;
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+        .form-check-label {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-cog me-2"></i>Sở thích học tập</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Flash Messages -->
+                    <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span th:text="${success}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <form th:action="@{/preferences/save}" method="post" th:object="${preference}">
+                        <input type="hidden" name="userId" th:value="1"> <!-- Tạm thời hardcode -->
+
+                        <!-- Loại tài liệu ưa thích -->
+                        <div class="preference-section">
+                            <h5 class="mb-3"><i class="fas fa-book me-2"></i>Loại tài liệu ưa thích</h5>
+                            <p class="text-muted mb-3">Chọn các loại tài liệu bạn thường sử dụng để học tập</p>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="preferTextbooks"
+                                               name="preferTextbooks" th:checked="${preference.preferTextbooks}">
+                                        <label class="form-check-label" for="preferTextbooks">
+                                            <i class="fas fa-book text-primary me-2"></i>
+                                            <strong>Sách giáo khoa</strong>
+                                            <br>
+                                            <small class="text-muted">Sách chính khóa, giáo trình</small>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="preferLectureNotes"
+                                               name="preferLectureNotes" th:checked="${preference.preferLectureNotes}">
+                                        <label class="form-check-label" for="preferLectureNotes">
+                                            <i class="fas fa-chalkboard-teacher text-info me-2"></i>
+                                            <strong>Bài giảng</strong>
+                                            <br>
+                                            <small class="text-muted">Slide bài giảng, note từ giảng viên</small>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="preferExercises"
+                                               name="preferExercises" th:checked="${preference.preferExercises}">
+                                        <label class="form-check-label" for="preferExercises">
+                                            <i class="fas fa-pencil-alt text-warning me-2"></i>
+                                            <strong>Bài tập</strong>
+                                            <br>
+                                            <small class="text-muted">Bài tập, assignment, thực hành</small>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="preferExamPapers"
+                                               name="preferExamPapers" th:checked="${preference.preferExamPapers}">
+                                        <label class="form-check-label" for="preferExamPapers">
+                                            <i class="fas fa-file-alt text-danger me-2"></i>
+                                            <strong>Đề thi</strong>
+                                            <br>
+                                            <small class="text-muted">Đề thi các năm, quiz, kiểm tra</small>
+                                        </label>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="preferResearchPapers"
+                                               name="preferResearchPapers" th:checked="${preference.preferResearchPapers}">
+                                        <label class="form-check-label" for="preferResearchPapers">
+                                            <i class="fas fa-search text-success me-2"></i>
+                                            <strong>Tài liệu nghiên cứu</strong>
+                                            <br>
+                                            <small class="text-muted">Paper, báo cáo nghiên cứu</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thời gian học ưa thích -->
+                        <div class="preference-section">
+                            <h5 class="mb-3"><i class="fas fa-clock me-2"></i>Thời gian học ưa thích</h5>
+                            <p class="text-muted mb-3">Chọn khung giờ bạn thường học tập hiệu quả nhất</p>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <select class="form-select" id="preferredStudyTime" name="preferredStudyTime">
+                                            <option value="">Chọn thời gian học ưa thích...</option>
+                                            <option value="MORNING" th:selected="${preference.preferredStudyTime == 'MORNING'}">
+                                                🌅 Sáng (6h - 12h) - Tỉnh táo, tập trung cao
+                                            </option>
+                                            <option value="AFTERNOON" th:selected="${preference.preferredStudyTime == 'AFTERNOON'}">
+                                                ☀️ Chiều (12h - 18h) - Ổn định, hiệu quả
+                                            </option>
+                                            <option value="EVENING" th:selected="${preference.preferredStudyTime == 'EVENING'}">
+                                                🌆 Tối (18h - 22h) - Yên tĩnh, sáng tạo
+                                            </option>
+                                            <option value="NIGHT" th:selected="${preference.preferredStudyTime == 'NIGHT'}">
+                                                🌙 Đêm (22h - 6h) - Tập trung tuyệt đối
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mức độ khó ưa thích -->
+                        <div class="preference-section">
+                            <h5 class="mb-3"><i class="fas fa-chart-line me-2"></i>Mức độ khó ưa thích</h5>
+                            <p class="text-muted mb-3">Chọn mức độ phù hợp với trình độ hiện tại của bạn</p>
+
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <select class="form-select" id="preferredDifficulty" name="preferredDifficulty">
+                                            <option value="">Chọn mức độ khó...</option>
+                                            <option value="BEGINNER" th:selected="${preference.preferredDifficulty == 'BEGINNER'}">
+                                                🟢 Cơ bản - Phù hợp cho người mới bắt đầu
+                                            </option>
+                                            <option value="INTERMEDIATE" th:selected="${preference.preferredDifficulty == 'INTERMEDIATE'}">
+                                                🟡 Trung bình - Đã có kiến thức nền tảng
+                                            </option>
+                                            <option value="ADVANCED" th:selected="${preference.preferredDifficulty == 'ADVANCED'}">
+                                                🔴 Nâng cao - Chuyên sâu, phức tạp
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Môn học yêu thích -->
+                        <div class="preference-section">
+                            <h5 class="mb-3"><i class="fas fa-star me-2"></i>Môn học yêu thích</h5>
+                            <p class="text-muted mb-3">Liệt kê các môn học bạn quan tâm hoặc có hứng thú đặc biệt</p>
+
+                            <div class="mb-4">
+                                <label for="favoriteSubjects" class="form-label">Các môn học yêu thích</label>
+                                <textarea class="form-control" id="favoriteSubjects" name="favoriteSubjects"
+                                          rows="3" placeholder="Ví dụ: Toán cao cấp, Lập trình Java, Cơ sở dữ liệu, Machine Learning..."
+                                          th:text="${preference.favoriteSubjects}"></textarea>
+                                <div class="form-text">Phân cách các môn học bằng dấu phẩy. Hệ thống sẽ ưu tiên đề xuất tài liệu thuộc các môn này.</div>
+                            </div>
+                        </div>
+
+                        <!-- Mục tiêu học tập -->
+                        <div class="preference-section">
+                            <h5 class="mb-3"><i class="fas fa-bullseye me-2"></i>Mục tiêu học tập</h5>
+                            <p class="text-muted mb-3">Xác định mục tiêu học tập giúp hệ thống đề xuất phù hợp hơn</p>
+
+                            <div class="mb-4">
+                                <label for="learningGoals" class="form-label">Mục tiêu học tập của bạn</label>
+                                <textarea class="form-control" id="learningGoals" name="learningGoals"
+                                          rows="4" placeholder="Ví dụ:
+- Nâng cao kỹ năng lập trình Java Spring Boot
+- Chuẩn bị cho kỳ thi cuối kỳ môn Cơ sở dữ liệu
+- Nghiên cứu chuyên sâu về Machine Learning
+- Hoàn thành đồ án tốt nghiệp..."
+                                          th:text="${preference.learningGoals}"></textarea>
+                                <div class="form-text">Mô tả chi tiết mục tiêu và định hướng học tập của bạn.</div>
+                            </div>
+                        </div>
+
+                        <!-- Thống kê học tập (nếu có) -->
+                        <div th:if="${preference.id}" class="preference-section">
+                            <h5 class="mb-3"><i class="fas fa-chart-bar me-2"></i>Thống kê học tập</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Lần cập nhật cuối</h6>
+                                            <p class="card-text">2 ngày trước</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Độ hoàn thiện</h6>
+                                            <div class="progress mb-2">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 75%"></div>
+                                            </div>
+                                            <small class="text-muted">75% thông tin đã được thiết lập</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div>
+                                <a th:href="@{/recommendations}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i>Quay lại đề xuất
+                                </a>
+                            </div>
+                            <div>
+                                <button type="reset" class="btn btn-outline-secondary me-2">
+                                    <i class="fas fa-undo me-1"></i>Đặt lại
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-1"></i>Lưu sở thích
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Thông tin hỗ trợ -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Hướng dẫn sử dụng</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>🎯 Tại sao cần thiết lập sở thích?</h6>
+                            <p class="small text-muted">Thiết lập sở thích giúp hệ thống hiểu rõ hơn về phong cách học tập của bạn, từ đó đưa ra những đề xuất tài liệu phù hợp và cá nhân hóa.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>🚀 Lợi ích nhận được</h6>
+                            <ul class="small text-muted">
+                                <li>Đề xuất tài liệu chính xác hơn</li>
+                                <li>Tiết kiệm thời gian tìm kiếm</li>
+                                <li>Học tập hiệu quả hơn</li>
+                                <li>Cá nhân hóa trải nghiệm</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tự động ẩn alert sau 5 giây
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            setTimeout(() => {
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        });
+
+        // Tính độ hoàn thiện form
+        function calculateCompletion() {
+            const inputs = document.querySelectorAll('input[type="checkbox"], select, textarea');
+            let filled = 0;
+
+            inputs.forEach(input => {
+                if (input.type === 'checkbox' && input.checked) {
+                    filled++;
+                } else if (input.type !== 'checkbox' && input.value.trim() !== '') {
+                    filled++;
+                }
+            });
+
+            const completion = Math.round((filled / inputs.length) * 100);
+            document.getElementById('completion-percent').textContent = completion + '%';
+            document.querySelector('.progress-bar').style.width = completion + '%';
+        }
+
+        // Gắn sự kiện tính toán
+        document.querySelectorAll('input, select, textarea').forEach(element => {
+            element.addEventListener('change', calculateCompletion);
+        });
+
+        // Tính toán ban đầu
+        calculateCompletion();
+    });
+</script>
+</body>
+</html>

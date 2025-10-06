@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title data-i18n="page.title">Thư viện Tài liệu Học tập</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container mt-4">
+    <!-- Hero Section -->
+    <div class="jumbotron bg-light p-5 rounded-3 mb-5">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-bold text-primary" data-i18n="home.hero.title">Chào mừng đến với Thư viện Tài liệu</h1>
+                <p class="lead" data-i18n="home.hero.subtitle">Nơi kết nối và chia sẻ tri thức - Cùng nhau học tập, cùng nhau phát triển</p>
+                <hr class="my-4">
+                <p data-i18n="home.hero.description">Khám phá kho tài liệu phong phú từ bài giảng, bài tập đến đề thi các môn học.</p>
+                <div class="mt-4">
+                    <a class="btn btn-primary btn-lg me-3" th:href="@{/documents}">
+                        <i class="fas fa-search me-2"></i>
+                        <span data-i18n="home.hero.explore_button">Khám phá tài liệu</span>
+                    </a>
+                    <a class="btn btn-outline-primary btn-lg" th:href="@{/documents/create}">
+                        <i class="fas fa-upload me-2"></i>
+                        <span data-i18n="home.hero.contribute_button">Đóng góp tài liệu</span>
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="fas fa-book-open-reader display-1 text-primary"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thống kê nhanh -->
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                    <h3 th:text="${totalDocuments} ?: '0'">0</h3>
+                    <p class="card-text" data-i18n="home.stats.documents">Tài liệu</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-graduation-cap fa-3x text-success mb-3"></i>
+                    <h3 th:text="${totalSubjects} ?: '0'">0</h3>
+                    <p class="card-text" data-i18n="home.stats.subjects">Môn học</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="fas fa-users fa-3x text-warning mb-3"></i>
+                    <h3 th:text="${totalUsers} ?: '0'">0</h3>
+                    <p class="card-text" data-i18n="home.stats.users">Thành viên</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <i class="fas fa-comments fa-3x text-info mb-3"></i>
+                    <h3 th:text="${totalComments} ?: '0'">0</h3>
+                    <p class="card-text" data-i18n="home.stats.comments">Đánh giá</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tính năng chính -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-book fa-2x text-primary mb-3"></i>
+                    <h5 class="card-title" data-i18n="home.features.diverse.title">Tài liệu đa dạng</h5>
+                    <p class="card-text" data-i18n="home.features.diverse.description">Bài giảng, bài tập, đề thi, tài liệu tham khảo từ các môn học khác nhau.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-search fa-2x text-success mb-3"></i>
+                    <h5 class="card-title" data-i18n="home.features.search.title">Tìm kiếm thông minh</h5>
+                    <p class="card-text" data-i18n="home.features.search.description">Tìm kiếm theo tên, tác giả, môn học, danh mục một cách dễ dàng.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-2x text-warning mb-3"></i>
+                    <h5 class="card-title" data-i18n="home.features.rating.title">Đánh giá chất lượng</h5>
+                    <p class="card-text" data-i18n="home.features.rating.description">Hệ thống đánh giá và bình luận giúp chọn lọc tài liệu chất lượng.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tài liệu mới nhất -->
+    <div class="mt-5">
+        <h3 class="border-bottom pb-2" data-i18n="home.recent_documents.title">Tài liệu mới nhất</h3>
+        <div class="row" th:if="${not #lists.isEmpty(recentDocuments)}">
+            <div class="col-md-6 mb-3" th:each="doc : ${recentDocuments}">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title" th:text="${doc.title}">Tiêu đề tài liệu</h6>
+                        <p class="card-text text-muted small mb-1" th:text="${doc.author}">Tác giả</p>
+                        <p class="card-text small" th:text="${doc.subject?.name}">Môn học</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted" th:text="${#temporals.format(doc.uploadDate, 'dd/MM/yyyy')}">Ngày đăng</small>
+                            <a th:href="@{/documents/{id}(id=${doc.id})}" class="btn btn-sm btn-outline-primary" data-i18n="home.recent_documents.detail_button">Xem chi tiết</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(recentDocuments)}" class="text-center py-4">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <p class="text-muted" data-i18n="home.recent_documents.empty_message">Chưa có tài liệu nào. Hãy là người đầu tiên đóng góp!</p>
+            <a th:href="@{/documents/create}" class="btn btn-primary">
+                <span data-i18n="home.hero.contribute_button">Đóng góp tài liệu</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- Translation Script -->
+<script>
+    // Dictionary đa ngôn ngữ
+    const translations = {
+        vi: {
+            // Navigation
+            'nav.brand.text': 'Thư viện Tài liệu',
+            'nav.home': 'Trang chủ',
+            'nav.documents': 'Tài liệu',
+            'nav.learning': 'Học tập',
+            'nav.subjects': 'Môn học',
+            'nav.categories': 'Danh mục',
+            'nav.management': 'Quản lý',
+            'nav.search.placeholder': 'Tìm tài liệu...',
+            'nav.learning.schedule': 'Lịch học cá nhân',
+            'nav.learning.recommendations': 'Đề xuất thông minh',
+            'nav.learning.preferences': 'Sở thích học tập',
+            'nav.learning.recent': 'Tài liệu mới nhất',
+            'nav.learning.advanced_search': 'Tìm kiếm nâng cao',
+            'nav.management.users': 'Người dùng',
+            'nav.management.comments': 'Bình luận',
+            'nav.management.statistics': 'Thống kê',
+            'nav.management.reports': 'Báo cáo',
+            'nav.user.account': 'Tài khoản',
+            'nav.user.profile': 'Hồ sơ cá nhân',
+            'nav.user.my_documents': 'Tài liệu của tôi',
+            'nav.user.my_comments': 'Bình luận của tôi',
+            'nav.user.notifications': 'Thông báo',
+            'nav.user.settings': 'Cài đặt',
+            'nav.user.logout': 'Đăng xuất',
+            'nav.user.login': 'Đăng nhập',
+
+            // Home page
+            'page.title': 'Thư viện Tài liệu Học tập',
+            'home.hero.title': 'Chào mừng đến với Thư viện Tài liệu',
+            'home.hero.subtitle': 'Nơi kết nối và chia sẻ tri thức - Cùng nhau học tập, cùng nhau phát triển',
+            'home.hero.description': 'Khám phá kho tài liệu phong phú từ bài giảng, bài tập đến đề thi các môn học.',
+            'home.hero.explore_button': 'Khám phá tài liệu',
+            'home.hero.contribute_button': 'Đóng góp tài liệu',
+            'home.stats.documents': 'Tài liệu',
+            'home.stats.subjects': 'Môn học',
+            'home.stats.users': 'Thành viên',
+            'home.stats.comments': 'Đánh giá',
+            'home.features.diverse.title': 'Tài liệu đa dạng',
+            'home.features.diverse.description': 'Bài giảng, bài tập, đề thi, tài liệu tham khảo từ các môn học khác nhau.',
+            'home.features.search.title': 'Tìm kiếm thông minh',
+            'home.features.search.description': 'Tìm kiếm theo tên, tác giả, môn học, danh mục một cách dễ dàng.',
+            'home.features.rating.title': 'Đánh giá chất lượng',
+            'home.features.rating.description': 'Hệ thống đánh giá và bình luận giúp chọn lọc tài liệu chất lượng.',
+            'home.recent_documents.title': 'Tài liệu mới nhất',
+            'home.recent_documents.detail_button': 'Xem chi tiết',
+            'home.recent_documents.empty_message': 'Chưa có tài liệu nào. Hãy là người đầu tiên đóng góp!',
+
+            // Footer
+            'footer.brand': 'Thư viện Tài liệu Học tập',
+            'footer.description': 'Nơi chia sẻ và kết nối tri thức cho sinh viên',
+            'footer.copyright': '&copy; 2025 Asm KhanhNQPH57627. Giai Đoạn 1.',
+            'footer.system_name': 'Hệ thống quản lý tài liệu học tập'
+        },
+        en: {
+            'nav.brand.text': 'Document Library',
+            'nav.home': 'Home',
+            'nav.documents': 'Documents',
+            'nav.learning': 'Learning',
+            'nav.subjects': 'Subjects',
+            'nav.categories': 'Categories',
+            'nav.management': 'Management',
+            'nav.search.placeholder': 'Search documents...',
+            'nav.learning.schedule': 'Personal Schedule',
+            'nav.learning.recommendations': 'Smart Recommendations',
+            'nav.learning.preferences': 'Learning Preferences',
+            'nav.learning.recent': 'Latest Documents',
+            'nav.learning.advanced_search': 'Advanced Search',
+            'nav.management.users': 'Users',
+            'nav.management.comments': 'Comments',
+            'nav.management.statistics': 'Statistics',
+            'nav.management.reports': 'Reports',
+            'nav.user.account': 'Account',
+            'nav.user.profile': 'Personal Profile',
+            'nav.user.my_documents': 'My Documents',
+            'nav.user.my_comments': 'My Comments',
+            'nav.user.notifications': 'Notifications',
+            'nav.user.settings': 'Settings',
+            'nav.user.logout': 'Logout',
+            'nav.user.login': 'Login',
+
+            'page.title': 'Document Library',
+            'home.hero.title': 'Welcome to Document Library',
+            'home.hero.subtitle': 'Where knowledge connects and shares - Learning together, growing together',
+            'home.hero.description': 'Explore a rich collection of documents from lectures, exercises to exam papers.',
+            'home.hero.explore_button': 'Explore Documents',
+            'home.hero.contribute_button': 'Contribute Documents',
+            'home.stats.documents': 'Documents',
+            'home.stats.subjects': 'Subjects',
+            'home.stats.users': 'Members',
+            'home.stats.comments': 'Reviews',
+            'home.features.diverse.title': 'Diverse Documents',
+            'home.features.diverse.description': 'Lectures, exercises, exams, reference materials from various subjects.',
+            'home.features.search.title': 'Smart Search',
+            'home.features.search.description': 'Search by name, author, subject, category easily.',
+            'home.features.rating.title': 'Quality Rating',
+            'home.features.rating.description': 'Rating and comment system helps filter quality documents.',
+            'home.recent_documents.title': 'Latest Documents',
+            'home.recent_documents.detail_button': 'View Details',
+            'home.recent_documents.empty_message': 'No documents yet. Be the first to contribute!',
+
+            'footer.brand': 'Document Library',
+            'footer.description': 'Where knowledge shares and connects for students',
+            'footer.copyright': '&copy; 2025 Asm KhanhNQPH57627. Phase 1.',
+            'footer.system_name': 'Document Management System'
+        }
+    };
+
+    // Hàm chuyển đổi ngôn ngữ
+    function changeLanguage(lang) {
+        // Lưu ngôn ngữ vào localStorage
+        localStorage.setItem('preferredLanguage', lang);
+
+        // Cập nhật thuộc tính lang của thẻ html
+        document.documentElement.lang = lang;
+
+        // Lấy dictionary
+        const dict = translations[lang];
+
+        // Cập nhật tất cả elements có data-i18n attribute
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            if (dict[key]) {
+                if (element.tagName === 'INPUT' && element.type === 'text') {
+                    element.placeholder = dict[key];
+                } else {
+                    element.textContent = dict[key];
+                }
+            }
+        });
+    }
+
+    // Khởi tạo khi trang load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kiểm tra ngôn ngữ đã lưu hoặc mặc định là 'vi'
+        const savedLang = localStorage.getItem('preferredLanguage') || 'vi';
+        changeLanguage(savedLang);
+
+        // Thêm event listeners cho nút ngôn ngữ
+        document.querySelectorAll('.language-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const lang = this.getAttribute('data-lang');
+                changeLanguage(lang);
+            });
+        });
+    });
+</script>
+</body>
+</html>

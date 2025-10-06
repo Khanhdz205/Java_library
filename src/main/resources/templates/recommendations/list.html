@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Đề xuất tài liệu</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .recommendation-card {
+      transition: transform 0.2s;
+      border-left: 4px solid #007bff;
+    }
+    .recommendation-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .schedule-based {
+      border-left-color: #28a745;
+    }
+    .preference-based {
+      border-left-color: #ffc107;
+    }
+    .history-based {
+      border-left-color: #dc3545;
+    }
+    .badge-recommendation {
+      font-size: 0.7rem;
+    }
+    .recommendation-type {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-lightbulb me-2"></i>Đề xuất tài liệu cho bạn</h2>
+    <div>
+      <a th:href="@{/preferences}" class="btn btn-outline-success me-2">
+        <i class="fas fa-user-cog me-1"></i>Sở thích học tập
+      </a>
+      <a th:href="@{/schedule}" class="btn btn-outline-primary">
+        <i class="fas fa-calendar-alt me-1"></i>Lịch học
+      </a>
+    </div>
+  </div>
+
+  <!-- Thông báo cấu hình -->
+  <div th:if="${!hasPreference or !hasSchedule}" class="alert alert-info mb-4">
+    <h5><i class="fas fa-info-circle me-2"></i>Để có đề xuất tốt hơn</h5>
+    <p class="mb-2">Hệ thống sẽ đề xuất chính xác hơn khi bạn:</p>
+    <ul class="mb-0">
+      <li th:if="${!hasSchedule}">
+        <a th:href="@{/schedule}">Thiết lập lịch học cá nhân</a> - để nhận đề xuất theo môn học bạn đang học
+      </li>
+      <li th:if="${!hasPreference}">
+        <a th:href="@{/preferences}">Cấu hình sở thích học tập</a> - để nhận đề xuất phù hợp với phong cách học của bạn
+      </li>
+    </ul>
+  </div>
+
+  <!-- Thống kê đề xuất -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-white bg-success">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h4 th:text="${scheduleBasedCount}">0</h4>
+              <p class="mb-0">Theo lịch học</p>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-calendar-alt fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-warning">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h4 th:text="${preferenceBasedCount}">0</h4>
+              <p class="mb-0">Theo sở thích</p>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-heart fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-danger">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h4 th:text="${historyBasedCount}">0</h4>
+              <p class="mb-0">Theo lịch sử</p>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-history fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-info">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h4 th:text="${#lists.size(recommendations)}">0</h4>
+              <p class="mb-0">Tổng đề xuất</p>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-star fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bộ lọc đề xuất -->
+  <div class="card mb-4">
+    <div class="card-header bg-light">
+      <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Lọc đề xuất</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label class="form-label">Loại đề xuất</label>
+            <div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="filter-schedule" checked>
+                <label class="form-check-label" for="filter-schedule">
+                  <i class="fas fa-calendar-alt me-1 text-success"></i>Theo lịch học
+                </label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="filter-preference" checked>
+                <label class="form-check-label" for="filter-preference">
+                  <i class="fas fa-heart me-1 text-warning"></i>Theo sở thích
+                </label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="filter-history" checked>
+                <label class="form-check-label" for="filter-history">
+                  <i class="fas fa-history me-1 text-danger"></i>Theo lịch sử
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label for="filter-subject" class="form-label">Môn học</label>
+            <select class="form-select" id="filter-subject">
+              <option value="">Tất cả môn học</option>
+              <option th:each="subjectId : ${userSubjects}"
+                      th:value="${subjectId}"
+                      th:text="${subjects.?[id == subjectId].get(0).name}">
+              </option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label for="filter-type" class="form-label">Loại tài liệu</label>
+            <select class="form-select" id="filter-type">
+              <option value="">Tất cả loại</option>
+              <option value="textbook">Sách giáo khoa</option>
+              <option value="lecture">Bài giảng</option>
+              <option value="exercise">Bài tập</option>
+              <option value="exam">Đề thi</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danh sách đề xuất -->
+  <div class="row" id="recommendations-container">
+    <div th:each="document : ${recommendations}" class="col-md-6 col-lg-4 mb-4">
+      <div class="card h-100 recommendation-card">
+        <div class="card-body position-relative">
+          <!-- Badge loại đề xuất -->
+          <span class="badge bg-success badge-recommendation recommendation-type">
+                        <i class="fas fa-calendar-alt me-1"></i>Lịch học
+                    </span>
+
+          <h6 class="card-title" th:text="${document.title}"></h6>
+
+          <p class="card-text mb-2">
+            <small class="text-muted">
+              <i class="fas fa-user me-1"></i>
+              <span th:text="${document.author}"></span>
+            </small>
+          </p>
+
+          <p class="card-text small text-muted mb-2"
+             th:text="${document.description} ?: 'Không có mô tả'"></p>
+
+          <div class="mb-3">
+            <span class="badge bg-info" th:text="${document.subject.name}"></span>
+            <span th:if="${document.categories}" class="badge bg-secondary ms-1"
+                  th:text="${document.categories[0].name}"></span>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <small class="text-muted">
+                <i class="fas fa-calendar me-1"></i>
+                <span th:text="${#temporals.format(document.uploadDate, 'dd/MM/yyyy')}"></span>
+              </small>
+              <br>
+              <small class="text-muted">
+                <i class="fas fa-download me-1"></i>
+                <span th:text="${document.downloadCount} + ' lượt'"></span>
+              </small>
+            </div>
+            <div>
+              <a th:href="@{/documents/{id}(id=${document.id})}"
+                 class="btn btn-sm btn-outline-primary me-1"
+                 title="Xem chi tiết">
+                <i class="fas fa-eye"></i>
+              </a>
+              <a th:if="${document.filePath}"
+                 th:href="@{'/download/' + ${document.filePath}}"
+                 class="btn btn-sm btn-outline-success"
+                 title="Tải xuống">
+                <i class="fas fa-download"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Không có đề xuất -->
+  <div th:if="${#lists.isEmpty(recommendations)}" class="text-center py-5">
+    <i class="fas fa-lightbulb fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">Chưa có đề xuất nào</h4>
+    <p class="text-muted">Hãy thiết lập lịch học và sở thích để nhận đề xuất phù hợp!</p>
+    <div>
+      <a th:href="@{/schedule}" class="btn btn-primary me-2">
+        <i class="fas fa-calendar-alt me-1"></i>Thiết lập lịch học
+      </a>
+      <a th:href="@{/preferences}" class="btn btn-success">
+        <i class="fas fa-user-cog me-1"></i>Cấu hình sở thích
+      </a>
+    </div>
+  </div>
+
+  <!-- Gợi ý cải thiện đề xuất -->
+  <div th:if="${!hasPreference or !hasSchedule}" class="card mt-4">
+    <div class="card-header bg-warning text-dark">
+      <h5 class="mb-0"><i class="fas fa-magic me-2"></i>Cải thiện đề xuất</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div th:if="${!hasSchedule}" class="col-md-6">
+          <div class="d-flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-calendar-plus fa-2x text-primary"></i>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6>Thêm lịch học</h6>
+              <p class="mb-2">Thêm các môn học bạn đang học để nhận đề xuất chính xác hơn</p>
+              <a th:href="@{/schedule/create}" class="btn btn-sm btn-primary">Thêm ngay</a>
+            </div>
+          </div>
+        </div>
+        <div th:if="${!hasPreference}" class="col-md-6">
+          <div class="d-flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-user-edit fa-2x text-success"></i>
+            </div>
+            <div class="flex-grow-1 ms-3">
+              <h6>Cá nhân hóa sở thích</h6>
+              <p class="mb-2">Cho chúng tôi biết sở thích học tập của bạn</p>
+              <a th:href="@{/preferences}" class="btn btn-sm btn-success">Cấu hình ngay</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Lọc đề xuất
+    const filterSchedule = document.getElementById('filter-schedule');
+    const filterPreference = document.getElementById('filter-preference');
+    const filterHistory = document.getElementById('filter-history');
+    const filterSubject = document.getElementById('filter-subject');
+    const filterType = document.getElementById('filter-type');
+
+    function filterRecommendations() {
+      const cards = document.querySelectorAll('.recommendation-card');
+
+      cards.forEach(card => {
+        const type = card.querySelector('.badge').textContent.trim();
+        const subject = card.querySelector('.bg-info').textContent.trim();
+        const title = card.querySelector('.card-title').textContent.toLowerCase();
+
+        let show = true;
+
+        // Lọc theo loại đề xuất
+        if (type.includes('Lịch học') && !filterSchedule.checked) show = false;
+        if (type.includes('Sở thích') && !filterPreference.checked) show = false;
+        if (type.includes('Lịch sử') && !filterHistory.checked) show = false;
+
+        // Lọc theo môn học
+        if (filterSubject.value && !subject.includes(filterSubject.options[filterSubject.selectedIndex].text)) {
+          show = false;
+        }
+
+        // Lọc theo loại tài liệu
+        if (filterType.value) {
+          const typeMap = {
+            'textbook': ['sách', 'textbook', 'giáo khoa'],
+            'lecture': ['bài giảng', 'lecture', 'slide'],
+            'exercise': ['bài tập', 'exercise', 'assignment'],
+            'exam': ['đề thi', 'exam', 'kiểm tra']
+          };
+
+          const keywords = typeMap[filterType.value];
+          const hasKeyword = keywords.some(keyword => title.includes(keyword));
+          if (!hasKeyword) show = false;
+        }
+
+        card.parentElement.style.display = show ? 'block' : 'none';
+      });
+    }
+
+    // Gắn sự kiện lọc
+    [filterSchedule, filterPreference, filterHistory, filterSubject, filterType].forEach(element => {
+      element.addEventListener('change', filterRecommendations);
+    });
+
+    // Hiển thị thời gian cập nhật
+    const now = new Date();
+    document.body.insertAdjacentHTML('beforeend',
+            `<div class="text-center text-muted mt-4 small">
+            <i class="fas fa-sync-alt me-1"></i>
+            Cập nhật lúc ${now.toLocaleTimeString('vi-VN')}
+        </div>`
+    );
+  });
+</script>
+</body>
+</html>
